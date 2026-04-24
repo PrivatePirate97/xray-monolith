@@ -45,10 +45,8 @@ Future MT versions will include LuaJIT 2.1 64 bit version, it will be incompatib
 Known issues with MT version
   * Due to aggressive culling some spots on the map might bug out and don't render properly. For example a place behind basement entrance in Rookie Village
   * Increased possibility to have a crash on loading the whole game or a savefile
-  * Longer pause on escaping to main menu or saving the game
   * Trees might have minor flickering, especially with mods that alter weather parameters via scripts
   * Occassional visual bugs like seldom flickering lights, model animations
-  * Inconsistencies with some Lua mods like Interaction Dot Marks that might result in buggy behaviour
   * DX8, 9 and 10 versions are largely untested, they do load and render correctly on the first glance
   * Some modpacks might crash on load, tested with vanilla and GAMMA only and they do work
 
@@ -237,6 +235,286 @@ How to compile exes:
 13. A short video demonstration of the entire process: https://youtu.be/MmZwyM2QO38
 
 ## Changelog
+**2026.04.24 (Prerelease)**
+
+* Main and MT:
+  * BusyHandsDebug: Remove where it is unnecessary
+  * GhenTuong: Add callback.net_spawn_after (https://github.com/themrdemonized/xray-monolith/pull/516)
+  * erepb: Monitor selection (https://github.com/themrdemonized/xray-monolith/pull/517)
+
+* MT:
+  * Option to disable static and dynamic wallmarks via `r_wallmarks_static` and `r_wallmarks_dynamic` cvars
+  * Fixed potential crash in `CObjectList::Unload`
+  * Safer `stat_memory_async`, reverted to `stat_memory` call in critical places
+
+**2026.04.21**
+
+* Main and MT:
+  * `player_hud::StopScriptAnim()` hide warnings under `print_bone_warnings` flag
+  * Optimization of headlights updates (CTorch):
+    * Optimize by limiting `set_position` and `set_rotation` calls by custom epsilon
+    * Further objects have bigger position epsilon but same rotation epsilon
+    * `r__optimize_torch` cvar to toggle optimization
+  * Controller attack fixes:
+    * No `actor_psy_immunity` dependency, looks correct in Anomaly
+    * Camera zooms on `left_eye/right_eye/bip01_head` bone if model has it, fallback to object position
+    * Better camera behaviour when actor is too close to controller
+  * Fix possible crash in `randI` when getting random value with `min == max` in range
+  * Do not set thread description, fix https://github.com/themrdemonized/xray-monolith/issues/511
+  * Legs: Disable shadow for DX8 and DX9
+  * `r__actor_shadow_in_demo_record` cvar to disable actor shadow when `demo_record 1`
+  * `r2_sun_lumscale_color` cvar to tune sun color
+  * Disable `alife_object that uses server_objects_registry, less calls to engine unless necessary` since I have paranoia and cant check if it doesn't lead to errors
+  * erepb: 
+    * Fix online transition squad teleport (https://github.com/themrdemonized/xray-monolith/pull/512)
+    * Fix actualize fails (https://github.com/themrdemonized/xray-monolith/pull/513)
+
+* MT:
+  * Cleanup `destroy_queue` if for some reason it is not empty on `CObjectList` destruction
+  * Split `PreRenderThread` on pre and post transforms. Rain and Particles updates start sooner in the game loop
+  * Possible fix for crashes related to UI in `CDialogHolder`
+  * Restore shadows from headlamp and flashlight, fix https://github.com/themrdemonized/xray-monolith/issues/510
+  * Legs: fix flickering headlamp position on DX9
+  * `CAI_Stalker::net_Relcase` invalidate `m_best_item_to_kill` if matches
+  * `stat_memory_async` command to get memory stats on separate thread
+  * Replaced all `stat_memory` calls to `stat_memory_async` to decrease freezes and loading times
+  * Optimization of discarding objects to render logic based on SSA
+    * `CalcSSA` uses squared radius for static objects, smaller objects will be culled more aggressively
+    * Gradient culling of static objects and grass based on SSA and position hash:
+      * Smaller objects that fail the SSA test will still render depending on how much smaller they are than the discard limit.
+      * In effect it turns "rendering radius" hard cutoff into smaller density of objects the further they are, makes pop-in less noticeable
+    * `r__ssa_discard` cvar to tune SSA discard, increased default SSA discard 3.5 -> 7
+    * `r_ssa_discard_exp` cvar to finetune discard logic of statics. less < 1 will increase density of closer objects, > 1 will reduce, default is 0.5
+    * `r_ssa_discard_fade_k` cvar to finetune discard logic of statics for far objects, more value means stricter discard, default is 4
+    * HUD geometry will skip SSA check
+  * Remade `r_wallmarks_ssa_k` cvar with different range of values, default is 0.5
+
+**2026.04.13**
+
+* Main and MT:
+  * Print warning and set m_ammoType to 0 if `m_ammoTypes[m_ammoType]` is invalid
+  * Fix potential "heavy busy hands" on game load due to `m_attached_items` invalid indexing
+  * CMissile, fix https://github.com/themrdemonized/xray-monolith/issues/507:
+    * Cache progress bar xml
+    * Preemptively create progress bar object when pressing kWPN_ZOOM so it won't be created during render phase where it might interfere with Lua GC
+  * DLTX:
+    * `xr_vector<Sect>` for data storage instead of `xr_vector<Sect*>`,
+    * Cache actually stores prepared data, faster cache retrieval and reduced size of cache slightly
+  * QoL: on the end of a reload animation, if weapon fire button is held, the weapon will start shooting automatically
+  * GhenTuong: CRayPick: implement get_normal (https://github.com/themrdemonized/xray-monolith/pull/508)
+
+* MT:
+  * Disable costly `stat_memory` calls on accessing main menu and saving, fixes big freezes
+  * Wallmark creation optimization (https://github.com/ixray-team/ixray-1.6-stcop/commit/c731e386173f284502e71c3201a9c1f68b22c1c5)
+  * Revert changes to task manager that can cause crashes
+  * Fix possible crashes when using https://github.com/DoktorDauerfeuer/Anomaly-hf-Gadgets-GAMMA-For-Hideout-Furniture
+  * Try to fix potential crash in `CEntityAlive::get_new_local_point_on_mesh`
+  * Try to fix agent_manager_properties.cpp (48): CAgentManagerPropertyEvaluatorEnemy::evaluate null dereference
+
+**2026.04.06**
+
+* MT:
+  * Wallmarks
+    * Restore `! Failed to render dynamic wallmark` try-catch block, fixes crashes with certain script mods
+    * Disable `g_wallmark_range_static` and `g_wallmark_range_skeleton` commands, they are unused
+  * Alternative solution to fix of complete lockup of engine due to calculating bones in separate thread, fixes `HudItem.cpp (551): CHudItem::UpdateCL` crash
+  * `CVisualMemoryManager::visible_object` nullptr check in `m_objects`
+
+**2026.04.05 (Prerelease)**
+
+* Main and MT:
+  * Legs: Fix rendering attachment shadows with multiple light sources
+  * BusyHandsDebug: Do not engage if `db.actor` is nil, doesn't matter at this point
+  * DXML: Safer Lua callback, fixes possible crashes such as when throwing grenades with right mouse button
+  * `duplicate_story_id_crash` console command to disable crash on `"Specified story object is already in the Story registry!"` error
+  * GhenTuong: CWeaponStatMgun: Introduce field "on_range_fov" to change gunner visibility range. Export lua game object functions (https://github.com/themrdemonized/xray-monolith/pull/498)
+
+* MT:
+  * Revert "Wallmarks: Increase MAX_TRIS from 16384 to 32768"
+  * Revert changes to visual memory manager and remove unnecessary critical section guards
+  * Split `CObjectList::destroy_queue` processing:
+    * When `mt_scheduler 1`, delegate will be pushed into `seqParallelBeforRender` to the next frame
+    * `net_RelCase` for bullet manager
+    * `empty()` checks for restrictions
+    * Possibly fixes random crashes when an object is destroyed while mt scheduler is processing objects
+  * Wallmarks refactoring
+    * Static wallmarks are grouped by sectors. Only visible sectors will render wallmarks
+    * Update wallmarks lifetime before rendering, simplify rendering loop
+    * Removal of skeleton wallmarks on object's `net_destroy`, fixes floating wallmarks in the air or stretched wallmarks artifacts
+    * Remove distance check when adding wallmarks to render queue, fixes absent wallmarks on objects that were killed more than 50 meters away
+    * `r_wallmarks_ssa_k` console command to limit rendering distance of wallmarks, default 40. More value means LESS rendering distance
+  * Fixed excessive smearing when using SSS with motion vectors
+  * Update global Feel::Vision data when an object changes it visuals, possibly fixes crashes related to `get_new_local_point_on_mesh`
+  * Possible fix of complete lockup of engine due to calculating bones in separate thread
+
+**2026.03.29**
+
+* Main and MT:
+  * Optimization of `CEnemyManager::useful`:
+    * Add short live caching of Lua call results, prevents expensive lua calls each frame esp. in GAMMA
+    * Jitter cache time based on `entity_alive->ID` so that the updates will be spread out between frames
+    * Big performance gain in firefights vs NPCs, up to 100% in GAMMA
+    * `g_enemy_manager_useful_cache_time` to control the cache expiration time. Default is 250ms. -1 will disable caching
+    
+    ![image](http://puu.sh/KKJxE/a4770b7660.jpg)
+
+  * Legs: 
+    * Fixed rendering attached items shadows such as headlight
+    * `g_legs_render_attachments_shadow` to toggle rendering attached items shadows, default enabled 
+  * Fixed Out Of Memory error due to abnormal size of underbarrel ammo in net packet
+  * `alife():object_count()` function to return current alife count
+  * Lua changes:
+    * `_g_patches`:
+      * Patch `pairs` and `ipairs` to use methods from metatables if they are defined (Lua 5.2 functionality)
+      * Simpler `empty_table` and `iempty_table`
+      * `get_object_by_id` uses `gameobjects_registry`, more reliable than `db.storage`
+      * `alife_object` uses `server_objects_registry`, less calls to engine unless necessary
+      * `fis_zero` and `fsimilar` functions
+      * `MinHeap` return self reference whenever possible
+      * simple `OrderedTable` class
+      * `_G` metatable newindex change to prevent shadowing const table
+    * `callbacks_gameobject`:
+      * `server_objects_registry` table contains all alife server objects for fast lookup without engine call
+    * `item_weapon`:
+      * A little more optimized ammo aggregation algorithm
+  * erepb: expose CALifeSimulator::update_scheduled to lua as force_update (https://github.com/themrdemonized/xray-monolith/pull/493)
+  * Verdatim25: Add a new method to CWeapon to allow for force changing zoom type (https://github.com/themrdemonized/xray-monolith/pull/495)
+
+MT:
+  * Fixed crash when using `log_timestamps`, fixes https://github.com/themrdemonized/xray-monolith/issues/485
+  * Fixed "Out of memory" error in `feel_vision.h` in `feel_vision_get` method
+  * Disabled multithreaded HOM, fixes artifacts near screen borders
+  * Fixed potential nullptr crash in `CMemoryManager::make_object_visible_somewhen`
+  * Fixed potential game lockup due to invalid coordinates for IK calculation
+  * Wallmarks: Increase MAX_TRIS from 16384 to 32768
+
+**2026.03.22**
+
+Main and MT:
+  * `play_cycle CA->PlayCycle` return value check on nullptr
+  * Legs improvements:
+    * In shadowmap phase render full body model without hiding bones instead of moving the player's, fixes some bugs like reappearing level transition dialog
+    * Adjust player's torch and bolt offsets so they won't float in the space
+    * Model is attached to the camera, fixing bugs with body displacement when colliding with objects or stalkers
+    * `g_legs_in_low_crounch` command to disable legs rendering when low crouching, default enabled
+  * `lua_busy_hands_debug` command to debug common "Busy Hands" errors, default enabled:
+    * Currently, it debugs two groups of possible errors, the most common ones:
+      * Calling methods on already destroyed `CScriptGameObject` objects
+      * Mismatched parameters when calling methods
+    * When critical error occurs that will lead to "Busy Hands":
+      * Lua callback will make a temporary save and popup "Lua Critical Error" window
+      * In the window you can choose to immediately return to Main Menu, reload the temporary save, or ignore and continue
+      ![image](http://puu.sh/KKpnk/2353c0f344.jpg)
+  * Replacing time event system with Indexed Min-Heap based time events
+    * Peek only closest event
+    * Fast insert and removal
+    * Safety check when creating time event but function is nil
+    * Postpone events when `sleep_active` flag is active so they won't be fired all at once when the flag is lifted
+    * My `optimized_time_events` script is blacklisted from loading so that new system will work all the time
+  * Minor optimizations in `_g.script`
+    * Simpler `is_empty`
+    * Simpler `shuffle_table`
+    * Simpler `size_table`
+    * Reservoir sampling based `random_key_table`
+    * `random_choice` without allocating tables
+  * Revised the fix for `DynamicNewsManager` to be more robust
+  * Fixed script_fixes_mp:727 `attempt to index local tm (nil value)`
+  * Fixed `state_mgr_animation.delayed_attach` to not spam time events
+  * Fixed `ui_debug_main.delayed_attach` to not spam time events
+  * Fixed `ui_enemy_health.cs_remove` spamming in time events because the wrapper function for time event doesn't return true
+  * Faster algorithm for `spairs` if order function is not provided  
+  * leer-h: Update poltergeist.cpp (https://github.com/themrdemonized/xray-monolith/pull/475)
+  * erepb:
+    * fix moving target pathing (https://github.com/themrdemonized/xray-monolith/pull/474)
+    * use m_location_level to sort map spots (https://github.com/themrdemonized/xray-monolith/pull/476)
+    * fix infinite loop when no sound devices in system (https://github.com/themrdemonized/xray-monolith/pull/479)
+
+MT:
+  * .peak lights has slightly higher intensity to be more visually noticeable compared to SSS
+
+**2026.03.16**
+
+Main and MT:
+  * LuaJIT increase memory allocation to 512MB
+  * Fixed potential crash in `spairs` if item was deleted from a table while iterating
+  * Stricter check for nil in `spairs` when ordering
+  * Replace only `__index` in `_g` metatable for always returning a copy of `VEC_ZERO`, `VEC_X`, `VEC_Y`, `VEC_Z`
+
+MT:
+  * Revert "Merge pull request #462 from knallpsi/detail-cache-optimization", needs further testing
+  * Revert `Alife registry uses sparse_map data structure for faster insertion, removal and iteration`, can cause random bugs
+
+**2026.03.15h1**
+
+Main and MT:
+  * Fixed Interaction Dot Marks issue when legs are enabled
+  * Fix spazzing shadow of legs in shadow phase, fix wrong placement of active item
+
+**2026.03.15**
+
+Main:
+  * Backport from MT: SSS phase_ssfx_sss_ext add more safety
+
+Main and MT:
+  * Legs rendering improvements
+    * Code cleanup
+    * `bip01_spine` is attached to pelvis with optional y offset `g_legs_spine_offset_y`, default 0.1
+    * Hiding neck instead of head
+    * Correct player shadow placement when legs are enabled
+  * Min-Heap based `spairs` iterator
+    * Supports early break without sorting whole table
+    * Faster retrieval of the first item
+  * Disable `alife():object(id)` invalid id spam on `pda.calculate_rankings`
+  * When `on_loading_screen_key_prompt` happens, perform Lua GC and call `jit.flush`
+  * leer-h: Command to disable actor body/legs model rotation delay. Functionality to load new animations for Actor\NPC without editing the existing stalker_animation.omf or including new omf's in the model's motion refs (https://github.com/themrdemonized/xray-monolith/pull/457)
+  * knallpsi: UI optimization, crc32 replacement (https://github.com/themrdemonized/xray-monolith/pull/463)
+  * GhenTuong:
+    * CWeaponStatMgun: Add camera effect when shooting and hand model/animation (https://github.com/themrdemonized/xray-monolith/pull/464)
+    * ltx_help_ex.script edit for WeaponStatMgun and Projector (https://github.com/themrdemonized/xray-monolith/pull/471)
+
+MT:
+  * nullptr check in `CAgentManagerPropertyEvaluatorEnemy::_value_type CAgentManagerPropertyEvaluatorEnemy::evaluate()`
+  * Alife registry uses `sparse_map` data structure for faster insertion, removal and iteration
+  * knallpsi: Details cache update optimization (https://github.com/themrdemonized/xray-monolith/pull/462)
+
+**2026.03.10**
+
+MT:
+  * Additional safety checks in visual memory manager
+  * `CPHSimpleCharacter::UpdateDynamicDamage`, nullptr check should reduce crashes when interacting with dead bodies
+  * `cNameVisual_set`, updating visuals will wait until the object is finished being processed in feel vision routine
+  * `CHudItem::renderable_Render`, nullptr check for owner
+
+**2026.03.07**
+
+Main and MT:
+  * Spawn Antifreeze: If the object has server counterpart, check if server object is still in alife after prefetching
+  * Fixed issue with Interaction Dot Marks mod due to `game_tutorials` cache
+  * Fixed potential crash in `CMovementManager::process_game_path` if dest_level_vertex_id is invalid
+  * Always return a copy of `VEC_ZERO`, `VEC_X`, `VEC_Y`, `VEC_Z` in scripts to prevent unwanted changes to original objects, potentially fixes a plethora of vanilla bugs related to these variables. Thanks to PrivatePirate97 for addressing the issue
+  * Possible fix to `aaaa_script_fixes_mp.script:652: 'for' initial value must be a number`
+  * `server_object_on_(un)register` callbacks for all server objects
+  * Removal of stale data in `bind_item` and `item_parts` when brand new server object is created, fixes bugs with having weapon or outfit parts on unrelated objects or having wrong item uses and condition on freshly crafted items
+  * Moved callback based script fixes from `callbacks_gameobject` to `aaaa_script_fixes_mp`
+  * Kutez: Spatial Audio Rework - The ability to overwrite EFX's reverb, allowing for controllable reverb (https://github.com/themrdemonized/xray-monolith/pull/451)
+  * leer-h: Added "show_actor_body" (https://github.com/themrdemonized/xray-monolith/pull/454)
+  * tabudz: Potential Vulnerability in Cloned Code (https://github.com/themrdemonized/xray-monolith/pull/453)
+  * knallpsi: Engine-side First Person Body implementation (https://github.com/themrdemonized/xray-monolith/pull/437)
+    * Type `g_legs 1` in console to enable legs
+    * `g_legs_fwd_offset` to adjust position for legs if it isn't specified in the config, see below
+    * `g_legs_in_demo_record` to enable rendering legs while `demo_record` is active
+    * By default, the existing player model based on current outfit will be used with hiding head and arm bones
+    * Possibility to specify custom model for legs. In an outfit section where `actor_visual` is defined, or `[actor]` section for the default legs, either use DLTX or adjust LTX directly:
+      1. Add `legs_visual` field with the path to the model to use (`legs_visual = sm\actor_legs\jacket_loner.ogf`)
+      2. Optionally add `legs_fwd_offset` field to adjust position of the legs (`legs_fwd_offset = -0.55`)
+      
+MT:
+  * Fixed possible crash when using `GT - Emplacement` mod
+  * `g_sv_Spawn` safety features
+  * `CUIWindow` postponed deletion of `AutoDelete` items
+  * `CWeapon::GetFireDispersion` added `pOwner` check for safety
+  * `CObject::net_Destroy()` will wait until the object is finished being processed in feel vision routine
+
 **2026.03.01**
 
 Main and MT:
@@ -1783,3 +2061,4 @@ override = true
 
 * Exported distance_to_xz_sqr() function of Fvector
 * Redesigned duplicate section error, it will additionally print what file adds the section in the first place in addition to the file that has the duplicate
+

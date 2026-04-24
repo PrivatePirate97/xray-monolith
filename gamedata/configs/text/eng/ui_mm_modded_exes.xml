@@ -8,6 +8,10 @@
 		<text>Modded Exes</text>
 	</string>
 
+	<string id="ui_mm_video_basic_monitor">
+		<text>Monitor</text>
+	</string>
+
 	<string id="ui_mm_lst_ON">
 		<text>ON</text>
 	</string>
@@ -59,8 +63,43 @@
 	<string id="ui_mm_modded_exes_visual_graphics_g_wallmark_range_skeleton">
 		<text>Skeletal wallmark range (g_wallmark_range_skeleton)</text>
 	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r_wallmarks_ssa_k">
+		<text>Wallmarks screen area limit (r_wallmarks_ssa_k)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r_wallmarks_ssa_k_desc">
+		<text>MORE value means LESS draw distance</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r_wallmarks_static">
+		<text>Decals on static objects (r_wallmarks_static)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r_wallmarks_dynamic">
+		<text>Decals on dynamic objects (r_wallmarks_dynamic)</text>
+	</string>
 	<string id="ui_mm_modded_exes_visual_graphics_r__blood_decals_on_objects">
-		<text>Blood decals on living objects (r__blood_decals_on_objects)</text>
+		<text>Additional Blood decals on living objects (r__blood_decals_on_objects)</text>
+	</string>
+
+	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard">
+		<text>Objects screen area limit (r__ssa_discard)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard_desc">
+		<text>MORE value means LESS draw distance of objects</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard_exp">
+		<text>Objects screen area limit exponent (r__ssa_discard_exp)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard_exp_desc">
+		<text>Finetunes draw distance cutoff, less value will increase density of closer objects, more value decrease it. Does NOT affect overall draw distance</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard_fade_k">
+		<text>Objects screen area limit fade coeff (r__ssa_discard_fade_k)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard_fade_k_desc">
+		<text>Finetunes draw distance cutoff, more value will increase the "fadeout" of objects, making bigger objects stop rendering sooner. DOES affect overall draw distance</text>
+	</string>
+
+	<string id="ui_mm_modded_exes_visual_graphics_r__actor_shadow_in_demo_record">
+		<text>Enable actor shadow in demo record (r__actor_shadow_in_demo_record)</text>
 	</string>
 
 	<string id="ui_mm_modded_exes_visual_graphics_g_use_non_linear_inertia">
@@ -640,6 +679,39 @@
 	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_progressive_stamina_cost_desc">
 		<text>Stamina will drain linearly with current weight instead of cutoff point</text>
 	</string>
+
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_first_person_death">
+		<text>First Person Death Camera (first_person_death)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_first_person_death_position_smoothing">
+		<text>FPD Camera Position Change Smoothing (first_person_death_position_smoothing)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_first_person_death_direction_smoothing">
+		<text>FPD Camera Direction Change Smoothing (first_person_death_direction_smoothing)</text>
+	</string>
+
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_legs">
+		<text>First Person Body Legs (g_legs)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_legs_in_demo_record">
+		<text>Show when demo_record is enabled (g_legs_in_demo_record)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_legs_in_low_crouch">
+		<text>Show in low crouch (g_legs_in_low_crouch)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_legs_render_attachments_shadow">
+		<text>Render shadows of attached items (g_legs_render_attachments_shadow)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_legs_fwd_offset">
+		<text>Forward position adjustment (g_legs_fwd_offset)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_g_legs_spine_offset_y">
+		<text>Spine vertical position adjustment (g_legs_spine_offset_y)</text>
+	</string>
+	<string id="ui_mm_modded_exes_gameplay_gameplay_general_disable_actor_body_rotation_delay">
+		<text>Disable Actor Body Rotation Delay (disable_actor_body_rotation_delay)</text>
+	</string>
+
 	<!-- Aim -->
 	<string id="ui_mm_menu_aim">
 		<text>Aim</text>
@@ -753,24 +825,6 @@
 		<text>Maximum launcher assist range (g_launcher_dynamic_range_max)</text>
 	</string>
 
-	<!-- First Person Death -->
-	<string id="ui_mm_menu_first_person_death">
-		<text>First Person Death</text>
-	</string>
-	<string id="ui_mm_first_person_death_modded_exes">
-		<text>First Person Death</text>
-	</string>
-
-	<string id="ui_mm_modded_exes_gameplay_first_person_death_first_person_death">
-		<text>First Person Death Camera (first_person_death)</text>
-	</string>
-	<string id="ui_mm_modded_exes_gameplay_first_person_death_first_person_death_position_smoothing">
-		<text>FPD Camera Position Change Smoothing (first_person_death_position_smoothing)</text>
-	</string>
-	<string id="ui_mm_modded_exes_gameplay_first_person_death_first_person_death_direction_smoothing">
-		<text>FPD Camera Direction Change Smoothing (first_person_death_direction_smoothing)</text>
-	</string>
-
 	<!-- Stalkers -->
 	<string id="ui_mm_menu_stalkers">
 		<text>Stalkers</text>
@@ -870,6 +924,12 @@
 	<string id="ui_mm_modded_exes_debug_errors_hanging_lamp_ignore_match_configuration">
 		<text>Don't crash on "no renderer type set for hanging-lamp" (hanging_lamp_ignore_match_configuration)</text>
 	</string>
+	<string id="ui_mm_modded_exes_debug_errors_lua_busy_hands_debug">
+		<text>Lua "Busy Hands" debug (lua_busy_hands_debug)</text>
+	</string>
+	<string id="ui_mm_modded_exes_debug_errors_duplicate_story_id_crash">
+		<text>Crash on "Specified story object is already in the Story registry!" error (duplicate_story_id_crash)</text>
+	</string>
 
 	<!-- Optimizations -->
 	<string id="ui_mm_menu_optimizations">
@@ -877,6 +937,13 @@
 	</string>
 	<string id="ui_mm_optimizations_modded_exes">
 		<text>Optimizations</text>
+	</string>
+
+	<string id="ui_mm_modded_exes_optimizations_g_enemy_manager_useful_cache_time">
+		<text>CEnemyManager::useful cache time(g_enemy_manager_useful_cache_time)</text>
+	</string>
+	<string id="ui_mm_modded_exes_optimizations_g_enemy_manager_useful_cache_time_desc">
+		<text>Saves the result CEnemyManager::useful call for a short time in ms to prevent slow Lua calls every frame and substantially increase FPS in firefights. Set to -1 to disable</text>
 	</string>
 	
 	<string id="ui_mm_modded_exes_optimizations_r2_mt">
@@ -902,6 +969,12 @@
 	</string>
 	<string id="ui_mm_modded_exes_optimizations_mt_update_weapon_sounds">
 		<text>Multithreaded weapon sounds updates (mt_update_weapon_sounds)</text>
+	</string>
+	<string id="ui_mm_modded_exes_optimizations_r__optimize_torch">
+		<text>Optimize headlamps update (r__optimize_torch)</text>
+	</string>
+	<string id="ui_mm_modded_exes_optimizations_r__optimize_torch_desc">
+		<text>Distant stalkers will have reduced frequency of updates</text>
 	</string>
 
 	<string id="ui_mm_modded_exes_optimizations_spawn_antifreeze">

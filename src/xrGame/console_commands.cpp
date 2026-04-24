@@ -87,6 +87,7 @@ extern int psLua_ParallelGC_CallAmount;
 extern BOOL psLua_ParallelGC_debug;
 extern BOOL psLua_ParallelGC;
 extern BOOL lua_debug;
+BOOL lua_busy_hands_debug = TRUE;
 
 float g_end_modif = 0.f;
 
@@ -132,6 +133,9 @@ extern BOOL g_apply_pdm_to_ads;
 extern BOOL g_smooth_ads_transition;
 extern BOOL g_allow_silencer_hide_tracer;
 
+extern int showActorBody; //leer
+extern BOOL disableActorBodyRotationDelay; //leer
+
 //demonized: new console vars
 extern BOOL firstPersonDeath;
 extern BOOL pseudogiantCanDamageObjects;
@@ -170,6 +174,7 @@ extern BOOL interruptFireOnAimToggle;
 extern BOOL mt_UpdateWeaponSounds;
 
 extern BOOL alifeObjectHangingLampIgnoreMatchConfiguration;
+extern BOOL duplicate_story_id_crash;
 
 extern BOOL spawn_antifreeze;
 extern BOOL spawn_antifreeze_debug;
@@ -178,6 +183,19 @@ extern float IK_CALC_DIST;
 extern float IK_CALC_SSA;
 extern float IK_ALWAYS_CALC_DIST;
 extern BOOL r_optimize_calculate_bones;
+extern BOOL r_optimize_torch;
+
+extern BOOL g_legs_enabled;
+extern float legs_fwd_offset;
+extern float legs_spine_offset_y;
+extern BOOL legs_in_demo_record;
+extern BOOL legs_in_low_crouch;
+extern BOOL legs_attach_to_camera;
+extern BOOL legs_render_attachments_shadow;
+
+extern BOOL r__actor_shadow_in_demo_record;
+
+extern int enemy_manager_useful_cache_time;
 
 extern CrosshairSettings g_crosshair_camera_near;
 extern CrosshairSettings g_crosshair_camera_far;
@@ -240,6 +258,9 @@ extern float recon_maxspeed;
 
 extern float wallmark_range_static;
 extern float wallmark_range_skeleton;
+
+extern float movement_manager_move_along_path_query_pos_threshold;
+extern float movement_manager_move_along_path_query_pos_threshold_sqr;
 
 ENGINE_API extern float g_console_sensitive;
 
@@ -2369,6 +2390,23 @@ public:
 	}
 };
 
+class CCC_MovePathQueryPosThreshold : public CCC_Float
+{
+public:
+    CCC_MovePathQueryPosThreshold(LPCSTR N) :
+        CCC_Float(N, &movement_manager_move_along_path_query_pos_threshold, 0.f, 2.f)
+    {
+    };
+
+    virtual void Execute(LPCSTR args)
+    {
+        CCC_Float::Execute(args);
+
+        movement_manager_move_along_path_query_pos_threshold = std::atof(args);
+        movement_manager_move_along_path_query_pos_threshold_sqr = movement_manager_move_along_path_query_pos_threshold * movement_manager_move_along_path_query_pos_threshold;
+    }
+};
+
 void CCC_RegisterCommands()
 {
 	//Not needed for a singleplayer-only mod
@@ -2484,6 +2522,7 @@ void CCC_RegisterCommands()
 	CMD4(CCC_Integer, "lua_parallel_gc", &psLua_ParallelGC, 0, 1);
 
 	CMD4(CCC_Integer, "lua_debug", &lua_debug, 0, 1);
+	CMD4(CCC_Integer, "lua_busy_hands_debug", &lua_busy_hands_debug, 0, 1);
 
 #ifdef DEBUG
 	CMD3(CCC_Mask, "ai_debug", &psAI_Flags, aiDebug);
@@ -2614,6 +2653,17 @@ void CCC_RegisterCommands()
 
 	CMD1(CCC_TimeFactor, "time_factor");
 	CMD1(CCC_FreezeTime, "freeze_time");
+
+    CMD4(CCC_Float, "g_legs_fwd_offset", &legs_fwd_offset, -2.0f, 2.0f);
+    CMD4(CCC_Float, "g_legs_spine_offset_y", &legs_spine_offset_y, -1.0f, 1.0f);
+    CMD4(CCC_Integer, "g_legs_in_demo_record", &legs_in_demo_record, 0, 1);
+    CMD4(CCC_Integer, "g_legs_in_low_crouch", &legs_in_low_crouch, 0, 1);
+    CMD4(CCC_Integer, "g_legs_attach_to_camera", &legs_attach_to_camera, 0, 1);
+    CMD4(CCC_Integer, "g_legs_render_attachments_shadow", &legs_render_attachments_shadow, 0, 1);
+
+    CMD4(CCC_Integer, "r__actor_shadow_in_demo_record", &r__actor_shadow_in_demo_record, 0, 1);
+
+    CMD4(CCC_Integer, "g_enemy_manager_useful_cache_time", &enemy_manager_useful_cache_time, -1, 500);
 
 	CMD3(CCC_Mask, "g_firepos", &psActorFlags, AF_FIREPOS);
 	CMD3(CCC_Mask, "g_firepos_zoom", &psActorFlags, AF_FIREPOS_ZOOM);
@@ -2895,6 +2945,7 @@ void CCC_RegisterCommands()
 	CMD4(CCC_Float, "ik_calc_ssa", &IK_CALC_SSA, 0.001f, 0.02f);
 	CMD4(CCC_Float, "ik_always_calc_dist", &IK_ALWAYS_CALC_DIST, 10, 50);
 	CMD4(CCC_Integer, "r__optimize_calculate_bones", &r_optimize_calculate_bones, 0, 1);
+	CMD4(CCC_Integer, "r__optimize_torch", &r_optimize_torch, 0, 1);
 
 	CMD4(CCC_Integer, "g_progressive_stamina_cost", &progressiveStaminaCost, 0, 1);
 	CMD4(CCC_Integer, "g_npcs_look_at_actor", &NPCsLookAtActor, 0, 1);
@@ -2969,6 +3020,10 @@ void CCC_RegisterCommands()
 	CMD4(CCC_Integer, "first_person_death_direction_smoothing", &firstPersonDeathDirectionSmoothing, 1, 60);
 	CMD4(CCC_Float, "first_person_death_near_plane_offset", &viewportNearOffset, -.1f, .5f);
 
+	//legs 
+
+	CMD4(CCC_Integer, "g_legs", &g_legs_enabled, 0, 1);
+
 	// PDA commands
 	CMD4(CCC_Integer, "pda_map_zoom_in_to_mouse", &pda_map_zoom_in_to_mouse, 0, 1);
 	CMD4(CCC_Integer, "pda_map_zoom_out_to_mouse", &pda_map_zoom_out_to_mouse, 0, 1);
@@ -3006,6 +3061,9 @@ void CCC_RegisterCommands()
 
 	// Ignore "no renderer type set for hanging-lamp" error
 	CMD4(CCC_Integer, "hanging_lamp_ignore_match_configuration", &alifeObjectHangingLampIgnoreMatchConfiguration, 0, 1);
+
+    // Ignore "Specified story object is already in the Story registry!: error
+    CMD4(CCC_Integer, "duplicate_story_id_crash", &duplicate_story_id_crash, 0, 1);
 
 	// Poltergeists spawn corpses on death
 	CMD4(CCC_Integer, "poltergeist_spawn_corpse_on_death", &poltergeist_spawn_corpse_on_death, 0, 1);
@@ -3045,4 +3103,8 @@ void CCC_RegisterCommands()
 	// Wallmark distances
 	CMD4(CCC_Float, "g_wallmark_range_static", &wallmark_range_static, 0.f, 1000.f);
 	CMD4(CCC_Float, "g_wallmark_range_skeleton", &wallmark_range_skeleton, 0.f, 1000.f);
+
+	CMD1(CCC_MovePathQueryPosThreshold, "movement_manager_move_along_path_query_pos_threshold");
+    CMD4(CCC_Integer, "show_actor_body", &showActorBody, 0, 2);
+    CMD4(CCC_Integer, "disable_actor_body_rotation_delay", &disableActorBodyRotationDelay, 0, 1);
 }

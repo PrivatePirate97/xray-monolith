@@ -1,4 +1,4 @@
-﻿#include "pch_script.h"
+#include "pch_script.h"
 #include "Actor_Flags.h"
 #include "hudmanager.h"
 #ifdef DEBUG
@@ -110,6 +110,8 @@ static Fbox bbStandBox;
 static Fbox bbCrouchBox;
 static Fvector vFootCenter;
 static Fvector vFootExt;
+
+int showActorBody = 0;
 
 Flags32 psActorFlags = {AF_GODMODE_RT | AF_AUTOPICKUP | AF_RUN_BACKWARD | AF_IMPORTANT_SAVE | AF_USE_TRACERS};
 int psActorSleepTime = 1;
@@ -258,6 +260,7 @@ CActor::CActor() : CEntityAlive(), current_ik_cam_shift(0)
 
 CActor::~CActor()
 {
+    m_legs_controller.destroy();
 	xr_delete(m_location_manager);
 	xr_delete(m_memory);
 	xr_delete(game_news_registry);
@@ -526,6 +529,8 @@ void CActor::Load(LPCSTR section)
 	m_sInventoryBoxUseAction = "inventory_box_use";
 	//---------------------------------------------------------------------
 	m_sHeadShotParticle = READ_IF_EXISTS(pSettings, r_string, section, "HeadShotParticle", 0);
+
+    m_legs_controller.destroy();
 }
 
 void CActor::set_actor_box_y_offset(u32 box_num, float offset)
@@ -1173,6 +1178,7 @@ void CActor::UpdateCL()
 	CWeapon* pWeapon = smart_cast<CWeapon*>(inventory().ActiveItem());
 
 	cam_Update(float(Device.dwTimeDelta) / 1000.0f, currentFOV());
+    m_legs_controller.update(this);
 
 #ifdef STATIONARYMGUN_NEW
 	CWeaponStatMgun *stm = smart_cast<CWeaponStatMgun *>(Holder());
@@ -2111,10 +2117,13 @@ void CActor::RenderCamAttached()
 	}
 }
 
+#include "../xrEngine/FDemoRecord.h"
+extern xr_unordered_set<CDemoRecord*> pDemoRecords;
 extern Flags32 ps_actor_shadow_flags;
-
+BOOL r__actor_shadow_in_demo_record = TRUE;
 bool CActor::AllowActorShadow()
 {
+    if (!r__actor_shadow_in_demo_record && !pDemoRecords.empty()) return false;
 	if (!ps_actor_shadow_flags.test(1)) return false;
 	if (::Render->get_generation() != ::Render->GENERATION_R2) return false;
 
@@ -2126,27 +2135,124 @@ bool CActor::AllowActorShadow()
 }
 
 #include "debug_renderer.h"
+BOOL legs_in_demo_record = FALSE;
+BOOL legs_in_low_crouch = FALSE;
+BOOL legs_render_attachments_shadow = TRUE;
+extern BOOL g_legs_enabled;
+
+bool canRenderLegs(CActor* actor, CHolderCustom* m_holder) noexcept
+{
+    return g_legs_enabled
+        && (legs_in_low_crouch || !(actor->MovingState() & mcCrouch && actor->MovingState() & mcAccel))
+        && g_player_hud
+        && !m_holder
+        && (legs_in_demo_record || pDemoRecords.empty())
+        && showActorBody == 0;
+};
+
 void CActor::renderable_Render()
 {
 	VERIFY(_valid(XFORM()));
-	
+
+    // leg shadows are disabled for DX8 and DX9
+    bool validRendererForShadow = (::Render->get_generation() == ::Render->GENERATION_R2) && (::Render->get_dx_level() != 0x00090000);
+
 	if (cam_active == eacFirstEye)
 	{
 		if (::Render->active_phase() == 0) // can render first person body here
 		{
+			if (canRenderLegs(this, m_holder))
+			{
+				m_legs_controller.render();
+			}
+
+            if (showActorBody == 1 || showActorBody == 2)
+            {
+                inherited::renderable_Render();
+
+                if (showActorBody == 2)
+                {
+                    CInventoryOwner::renderable_Render();
+                }
+            }
+
 			//if (fpBody) 
 			//	inherited::renderable_Render();
 		}
 		else if (AllowActorShadow()) // render actor shadow
 		{
-			inherited::renderable_Render();
-			if ((IsFocused() || (!(IsFocused() && ((!m_holder) ||
-				(m_holder && m_holder->allowWeapon() && m_holder->HUDView()))))))
-				CInventoryOwner::renderable_Render();
+            if (validRendererForShadow)
+            {
+                static u32 renderFrame = 0;
+                bool needAdjust = false;
+                if (Device.dwFrame != renderFrame)
+                {
+                    renderFrame = Device.dwFrame;
+                    needAdjust = true;
+                }
+                
+                if (canRenderLegs(this, m_holder))
+                {
+                    Fvector diff(XFORMShadow.c);
+                    diff.sub(XFORM().c);
+                    float m = diff.magnitude();
+                    diff.normalize_safe();
+
+                    // Render full body from legs controller without hiding bones for shadow correctness
+                    // Solves potential issues with manipulating actor's XFORM
+                        m_legs_controller.update(this, true);
+                        m_legs_controller.render();
+
+                        // Ideally the active item also should be duplicated but leave this for now
+                        // Move active item
+                        PIItem pItem = inventory().ActiveItem();
+                    if (pItem)
+                    {
+                        auto& v = pItem->object();
+                        if (needAdjust)
+                            v.XFORM().c.mad(diff, m);
+                        v.renderable_Render();
+                    }
+
+                    // Move torch
+                    if (legs_render_attachments_shadow)
+                    {
+                        for (const auto& I : m_attached_objects)
+                        {
+                            auto& v = I->object();
+                            if (needAdjust)
+                                v.XFORM().c.mad(diff, m);
+                            v.renderable_Render();
+                        }
+                    }
+
+                    // Move bolt
+                    if (inventory().GetActiveSlot() == BOLT_SLOT)
+                    {
+                        auto bI = inventory().ItemFromSlot(BOLT_SLOT);
+                        if (bI)
+                        {
+                            auto& v = bI->object();
+                            if (needAdjust)
+                                v.XFORM().c.mad(diff, m);
+                        }
+                    }
+                }
+                else
+                {
+                    inherited::renderable_Render();
+                    CInventoryOwner::renderable_Render();
+                }
+            }
+            else
+            {
+                inherited::renderable_Render();
+                CInventoryOwner::renderable_Render();
+            }			
 		}
 	}
 
-// Third Person Body and Weapon/Item
+	// Third Person Body and Weapon/Item
 	else
 	{
 		inherited::renderable_Render();
@@ -2158,6 +2264,9 @@ BOOL CActor::renderable_ShadowGenerate()
 {
 	if (m_holder)
 		return FALSE;
+
+    if (::Render->get_generation() == ::Render->GENERATION_R1 && cam_active == eacFirstEye && canRenderLegs(this, m_holder))
+        return FALSE;
 
 	return inherited::renderable_ShadowGenerate();
 }
