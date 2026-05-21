@@ -19,14 +19,14 @@ MT version includes all features of standard Modded Exes described below, plus:
   * Particle interpolation between frames for smoother appearance
   * Multithreaded: 
     * Loading resources (textures, models, CFORM (collisions))
-    * HOM (Visibility tests)
     * Grass rendering
     * Rain
     * Particles
     * Bones calculations for models
     * Engine scheduler, split between real-time updated objects on main thread and others on separate thread with configurable batch amount to do per frame
     * Feel and Vision for AI
-    * Task Manager
+    * Task Manager (disabled by default)
+    * UI (disabled by default)
     * Parallel execution of `CreateTimeEvent` and `AddUniqueCall` commands (disabled by default)
     * Logger
   * Toggleable options available in Modded Exes options
@@ -235,12 +235,98 @@ How to compile exes:
 13. A short video demonstration of the entire process: https://youtu.be/MmZwyM2QO38
 
 ## Changelog
-**2026.04.24 (Prerelease)**
+**2026.05.15**
+
+* Main and MT:
+  * First Person Death improvements:
+    * Increase collision size of `bip01_head` on death to prevent camera clipping into the ground
+    * `first_person_death_head_scale` cvar to adjust
+  * `BusyHandsDebug`: do not engage UI when busy hands was triggered while in main menu
+  * `CSE_ALifeOnlineOfflineGroup::update` is in try catch block
+  * damiansirbu: Guard empty m_members in CSE_ALifeOnlineOfflineGroup::update and synchronize_location (https://github.com/themrdemonized/xray-monolith/pull/527)
+  * Lucy: Fix models not compiling the correct shader when set_shader is used (https://github.com/themrdemonized/xray-monolith/pull/529)
+  * Orleon: Added 'actor_on_item_sell' and 'actor_on_item_buy' callbacks
+  * GhenTuong: Revert xr_combat_ignore.script, fix CCar drone, export functions for physics_shell and CUIProgressBar (https://github.com/themrdemonized/xray-monolith/pull/532)
+
+* MT:
+  * Lights:
+    * `r2_shadow_lod_min` cvar to hard limit lights' rendering distance independently of `r2_slight_fade`, more value will limit rendering distance sooner, default 0.02
+    * `r2_shadow_omnipart_vischeck` to enable visibility checks for additional 6 lights that are created for each point light, increases performance by not rendering invisible lights, default enabled
+    * Removed while loop in light visibility tests, the visibility result will be retrieved next frame. Pending results are treated as visible.
+  * Emissive objects won't have SSA check applied to render them further without noticeable pop-in
+  * `CPHSimpleCharacter::UpdateDynamicDamage` has try catch block to hopefully not crash
+  * Crash fix on `TTestDepthCallback` error
+  * `ph_ref_object` safety checks
+  * Fix flickering grass on some systems, ensures that MT_CALC finishes before render.
+  * Fixed `r2_mt 0` behaviour with grass
+  * Restored multithreaded HOM with additional thread safety
+  * Reduced possibility of UI crashes by reserving UI elements capacity a bit
+
+**2026.05.08**
+
+* Main and MT:
+  * Persistent weather do not load/save state on transitions to underground levels
+  * Disable actor shadow when when `level.set_cam_custom_position_direction` is engaged and `r__actor_shadow_in_demo_record` is 1
+  * Fixed crash on `poltergeist_telekinesis.cpp (310): SCollisionHitCallback::call` with Poltergeists
+
+* MT:
+  * `r__clear_resources_on_unload` cvar to force unload textures and models from pool on level change or exit. Will decrease VRAM usage but increase loading times
+  * Fixed `r__no_ram_textures` behaviour to match vanilla
+  * `setVisible(false)` for objects about to be destroyed, possibly fixes visuals flickering for one frame like with Mags Redux mod
+  * `CSoundMemoryManager::update` `m_sounds` nullptr check
+
+**2026.05.05**
+* Main and MT:
+  * More meaningful error messages in `CDamageManager::load_section` and `CWeaponMagazined::LoadScopeKoeffs`
+  * `level.set_cam_custom_position_direction` don't apply FPCam smoothing if custom smoothing is 0
+  * Disable legs rendering when `level.set_cam_custom_position_direction` is applied
+  * Auto-fire after reload, use `Level().IR_OnKeyboardPress` instead of Actor's input receiver, fix https://github.com/themrdemonized/xray-monolith/issues/521
+  * Disable caching in `utils_item.script`, fixes stale data issue
+  * `luabind::detail::class_rep::function_dispatcher` has own try catch block that will reroute errors to BusyHandsDebug, potentially covering more script issues
+  * Weapon overheat smoke script refactor:
+    * Properly uses hud geometry
+    * Uses `stop_deffered` instead of `stop` to properly stop smoke particles
+    * Individual smoke data per weapon, particles will work when weapon is dropped
+    * Framerate independent buildup and cooldown
+    * Possibility to work on npc weapons, currently disabled, doesn't look good enough
+    * Baseline tuning is to start overheating after 80-85 rounds of non stop firing of PKM
+  * Persistent weather implementation with using weather interpolation from engine
+    * Storing last weather file, current weather file and interpolation between them from engine
+    * On load first force apply previous weather, then apply new weather but not forced, then apply interpolation
+    * Can be toggled in `Video / Weather` options
+  * New engine exports for manipulating weather
+  * Safer `pda.calculate_rankings` patch
+  * leyten: clamp actor camera collision box at high FOV to fix ultrawide doorway snag, `g_clamp_actor_camera_collision 1` to enable ultrawide fix (https://github.com/themrdemonized/xray-monolith/pull/520)
+  * erepb: route assign_smart via simulation_board to fix SIMBOARD.smarts orphans (https://github.com/themrdemonized/xray-monolith/pull/522)
+  * SaloEater: motion exists engine call (https://github.com/themrdemonized/xray-monolith/pull/524)
+
+* MT:
+  * Move `process_sound_callbacks` Lua callbacks for NPCs to `shedule_update`, with `mt_scheduler 1` they will be on separate thread, slightly increasing performance when there are many NPCs
+  * `CSector::traverse` optimization to address fps drop when many portals are in frustum like in Pripyat Outskirts
+  * `mt_ui` cvar to move `pUIGame->OnFrame` on separate thread, default disabled
+  * `CPHMovementControl::Calculate` safety checks
+  * `CParticlesObject::renderable_Render` nullptr check
+  * `ISpatial::OwnerSectorPoint` sligthly safer
+  * `CMapLocation::UpdateSpot` `m_owner_se_object` nullptr check
+  * `CAI_Stalker::process_enemies()` `memory().visual().objectsPtr()` nullptr check
+  * Removed leftover code from `ModelPool`
+  * Safer procedure to deferred deletion of models in `ModelsToDeleteDefer`
+  * Possible fix of `Physics.cpp (245): CollideIntoGroup` crash
+  * Unregister particles from spatial database when `PSI_Destroy` is called
+  * Replace `_min` `_max` with `std::min` and `std::max`
+  * Rain:
+    * Fix items pool not reducing, leading to broken density reducing on transitions from rain weather
+    * `r__rain_exp` and `r__rain_k` commands to control rain buildup and max density
+
+**2026.04.26**
 
 * Main and MT:
   * BusyHandsDebug: Remove where it is unnecessary
+  * `CWeaponMagazined::LoadScopeKoeffs` print error message on invalid weapon config
+  * maks7231: fix double `occluder_volume` apply by removing it from `level_sounds`, resulting in very quiet environment sounds in some places
   * GhenTuong: Add callback.net_spawn_after (https://github.com/themrdemonized/xray-monolith/pull/516)
-  * erepb: Monitor selection (https://github.com/themrdemonized/xray-monolith/pull/517)
+  * erepb: Monitor selection (https://github.com/themrdemonized/xray-monolith/pull/517, https://github.com/themrdemonized/xray-monolith/pull/518)
+  * Verdatim25: Fix for motion marked LMG reloads, unjams and added capability for motion_marked tri_state_reload weapons (https://github.com/themrdemonized/xray-monolith/pull/519)
 
 * MT:
   * Option to disable static and dynamic wallmarks via `r_wallmarks_static` and `r_wallmarks_dynamic` cvars

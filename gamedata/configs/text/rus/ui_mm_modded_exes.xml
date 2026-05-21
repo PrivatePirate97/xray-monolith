@@ -12,6 +12,13 @@
 		<text>Монитор</text>
 	</string>
 
+	<string id="ui_mm_video_weather_persistent_weather">
+		<text>Сохранение погоды</text>
+	</string>
+	<string id="ui_mm_video_weather_persistent_weather_desc">
+		<text>Сохраняет состояние текущей погоды чтобы точно восстановить её при загрузке</text>
+	</string>
+
 	<string id="ui_mm_lst_ON">
 		<text>ВКЛ</text>
 	</string>
@@ -79,6 +86,16 @@
 		<text>Дополнительные декали крови на существах (r__blood_decals_on_objects)</text>
 	</string>
 
+	<string id="ui_mm_modded_exes_visual_graphics_r__rain_exp">
+		<text>Нарастание дождя (r__rain_exp)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r__rain_exp_desc">
+		<text>Как быстро увеличивается кол-во дождя. БОЛЬШЕ значение - МЕНЬШЕ нарастание</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r__rain_k">
+		<text>Модификатор плотности дождя (r__rain_k)</text>
+	</string>
+
 	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard">
 		<text>Ограничение отрисовки объектов по занимаемой зоне на дисплее (SSA) (r__ssa_discard)</text>
 	</string>
@@ -96,6 +113,12 @@
 	</string>
 	<string id="ui_mm_modded_exes_visual_graphics_r__ssa_discard_fade_k_desc">
 		<text>Настраивает отрисовку объектов, меньшее значение увеличивает кол-во объектов вдалеке, НЕ влияет на близкие объекты, ВЛИЯЕТ на общую дистанцию отрисовки</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r2_shadow_lod_min">
+		<text>Ограничение дистанции рендера источников света (r2_shadow_lod_min)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r2_shadow_lod_min_desc">
+		<text>Большее значение уменьшит макс дистанцию рендера источников света</text>
 	</string>
 
 	<string id="ui_mm_modded_exes_visual_graphics_r__actor_shadow_in_demo_record">
@@ -964,6 +987,9 @@
 	<string id="ui_mm_modded_exes_optimizations_mt_task_manager">
 		<text>Многопоточный Task Manager (mt_task_manager)</text>
 	</string>
+	<string id="ui_mm_modded_exes_optimizations_mt_ui">
+		<text>Многопоточный апдейт UI (mt_ui)</text>
+	</string>
 	<string id="ui_mm_modded_exes_optimizations_mt_update_weapon_sounds">
 		<text>Многопоточное обновление звуков оружия (mt_update_weapon_sounds)</text>
 	</string>
@@ -972,6 +998,12 @@
 	</string>
 	<string id="ui_mm_modded_exes_optimizations_r__optimize_torch_desc">
 		<text>Дальние объекты будут реже обновляться</text>
+	</string>
+	<string id="ui_mm_modded_exes_optimizations_r2_shadow_omnipart_vischeck">
+		<text>Проверка видимости для omni света (r2_shadow_omnipart_vischeck)</text>
+	</string>
+	<string id="ui_mm_modded_exes_optimizations_r2_shadow_omnipart_vischeck_desc">
+		<text>Повышает производительность за счет проверки видимости источников света, созданных из точечных источников, и не рендеринга невидимых источников</text>
 	</string>
 	
 	<string id="ui_mm_modded_exes_optimizations_spawn_antifreeze">
@@ -1035,6 +1067,13 @@
 
 	<string id="ui_mm_modded_exes_optimizations_lua_parallel_gc_debug">
 		<text>Lua Parallel GC Debug (lua_parallel_gc_debug)</text>
+	</string>
+
+	<string id="ui_mm_modded_exes_visual_graphics_r__clear_resources_on_unload">
+		<text>Очистить ресурсы во время загрузки уровня (r__clear_resources_on_unload)</text>
+	</string>
+	<string id="ui_mm_modded_exes_visual_graphics_r__clear_resources_on_unload_desc">
+		<text>Уменьшает потребление RAM и VRAM но увеличивает время загрузки уровней</text>
 	</string>
 
 	<string id="ui_mm_modded_exes_optimizations_dltx_use_cache">

@@ -98,7 +98,6 @@
         // MT only
         string active_tutorial_name()
         class class_info(object) // Returns luabind class with information about object's class: name, methods, attributes
-        CGameTaskManager* get_game_task_manager()
         string r_file_as_string(string path)
 
         -- color getters / setters
@@ -129,6 +128,8 @@
         function ui2world_offscreen(Fvector2 pos) -> Fvector result, u16 object_id
         change_game_news_show_time(CUIWindow* UIWindow, float show_time)
         update_pda_news_from_uiwindow(CUIWindow* UIWindow)
+
+        bool motion_exists(string model_path, string motion_name) -- Loads a HUD model temporarily and checks whether it contains a named cycle motion. Caller must ensure the file exists first — game crashes on a missing path.
     }
 
     ini_file() {
@@ -163,6 +164,9 @@
 
     class CUIProgressBar {
         CUIStatic GetProgressStatic()
+		bool GetSnapNoDelay() Get the status of "SnapNoDelay"
+		void SetSnapNoDelay() Enable: progress visual displays progress position instantly. No longer progressively increase/descrease until meeting the new position.
+		void SnapProgressPos() Snap progress visual to current progress position.
     }
 
     class CUIStatic {
@@ -301,6 +305,10 @@
         float get_music_volume()
         void set_music_volume(float)
 
+        float get_weather_weight()
+        void set_weather_weight(float)
+        void set_weather_smooth(string)
+
         // Camera, position is x,y,z vector, direction is head,pitch,roll vector in RADIANS
         void set_cam_custom_position_direction(Fvector position, Fvector direction, int smoothing, bool hudDraw, bool hudAffect)
         void set_cam_custom_position_direction(Fvector position, Fvector direction, int smoothing, bool hudDraw)
@@ -377,6 +385,8 @@
     // obj:get_physics_shell()
     class PHShell {
         void apply_torque(float roll, float yaw, float pitch)
+		void set_linear_vel(vector)
+		void set_angular_vel(vector)
     }
 
     class Fvector {

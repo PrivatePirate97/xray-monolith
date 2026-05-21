@@ -854,6 +854,7 @@ extern float offsetZ;
 extern float viewportNearOffset;
 extern int firstPersonDeathPositionSmoothing;
 extern int firstPersonDeathDirectionSmoothing;
+extern float firstPersonDeathHeadScale;
 
 class CCC_FPDDirectionOffset : public CCC_Vector3
 {
@@ -2687,6 +2688,9 @@ void CCC_RegisterCommands()
 	CMD4(CCC_Integer, "g_decouple_horz_recoil", &g_decouple_horz_recoil, 0, 1);
 	CMD4(CCC_Integer, "g_use_non_linear_inertia", &g_use_non_linear_inertia, 0, 1);
 
+    extern XRPHYSICS_API BOOL g_clamp_actor_camera_collision;
+    CMD4(CCC_Integer, "g_clamp_actor_camera_collision", &g_clamp_actor_camera_collision, 0, 1);
+
 	CMD4(CCC_Float, "g_recon_show_speed", &recon_show_speed, 0.f, 20.f);
 	CMD4(CCC_Float, "g_recon_hide_speed", &recon_hide_speed, 0.f, 20.f);
 	CMD4(CCC_Float, "g_recon_mindist", &recon_mindist, 0.f, 300.f);
@@ -3018,7 +3022,8 @@ void CCC_RegisterCommands()
 	CMD1(CCC_FPDPositionOffset, "first_person_death_position_offset");
 	CMD4(CCC_Integer, "first_person_death_position_smoothing", &firstPersonDeathPositionSmoothing, 1, 30);
 	CMD4(CCC_Integer, "first_person_death_direction_smoothing", &firstPersonDeathDirectionSmoothing, 1, 60);
-	CMD4(CCC_Float, "first_person_death_near_plane_offset", &viewportNearOffset, -.1f, .5f);
+    CMD4(CCC_Float, "first_person_death_near_plane_offset", &viewportNearOffset, -.1f, .5f);
+    CMD4(CCC_Float, "first_person_death_head_scale", &firstPersonDeathHeadScale, 1.f, 10.f);
 
 	//legs 
 
